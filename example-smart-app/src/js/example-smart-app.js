@@ -7,7 +7,7 @@
       ret.reject();
     }
 
-    function onReady(smart)  {
+   /* function onReady(smart)  {
       if (smart.hasOwnProperty('patient')) {
         var patient = smart.patient;
         var pt = patient.read();
@@ -66,7 +66,75 @@
         onError();
       }
     }
-
+    */
+    
+    function onReady(smart) {
+        if (smart.hasOwnProperty('patient')) {
+        var patient = smart.patient;
+        var pt = patient.read();
+    
+        // Fetch multiple resource types
+        var obv = smart.patient.api.fetchAll({ type: 'Observation' });
+        var conditions = smart.patient.api.fetchAll({ type: 'Condition' });
+        var meds = smart.patient.api.fetchAll({ type: 'MedicationRequest' });
+        var allergies = smart.patient.api.fetchAll({ type: 'AllergyIntolerance' });
+        var encounters = smart.patient.api.fetchAll({ type: 'Encounter' });
+    
+        // Wait for all resources to load
+        $.when(pt, obv, conditions, meds, allergies, encounters).fail(onError);
+    
+        $.when(pt, obv, conditions, meds, allergies, encounters).done(function(patient, obv, conditions, meds, allergies, encounters) {
+          var byCodes = smart.byCodes(obv, 'code');
+          var gender = patient.gender;
+    
+          var fname = '';
+          var lname = '';
+    
+          if (typeof patient.name[0] !== 'undefined') {
+            fname = patient.name[0].given.join(' ');
+            lname = patient.name[0].family.join(' ');
+          }
+    
+          var height = byCodes('8302-2');
+          var systolicbp = getBloodPressureValue(byCodes('55284-4'), '8480-6');
+          var diastolicbp = getBloodPressureValue(byCodes('55284-4'), '8462-4');
+          var hdl = byCodes('2085-9');
+          var ldl = byCodes('2089-1');
+    
+          var p = defaultPatient();
+          p.birthdate = patient.birthDate;
+          p.gender = gender;
+          p.fname = fname;
+          p.lname = lname;
+          p.height = getQuantityValueAndUnit(height[0]);
+    
+          if (typeof systolicbp != 'undefined') {
+            p.systolicbp = systolicbp;
+          }
+    
+          if (typeof diastolicbp != 'undefined') {
+            p.diastolicbp = diastolicbp;
+          }
+    
+          p.hdl = getQuantityValueAndUnit(hdl[0]);
+          p.ldl = getQuantityValueAndUnit(ldl[0]);
+    
+          // Add fetched resources
+          p.conditions = conditions;
+          p.medications = meds;
+          p.allergies = allergies;
+          p.encounters = encounters;
+    
+          // Render JSON to the page
+          var jsonOutput = JSON.stringify(p, null, 2); // Pretty-print with 2-space indentation
+          $('body').html('<pre>' + jsonOutput + '</pre>'); // Inject into body as <pre>
+          
+          ret.resolve(p);
+        });
+      } else {
+        onError();
+      }
+}
     FHIR.oauth2.ready(onReady, onError);
     return ret.promise();
 
