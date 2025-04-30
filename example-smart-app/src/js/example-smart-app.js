@@ -7,7 +7,7 @@
       ret.reject();
     }
 
-   function onReady(smart)  {
+ /*  function onReady(smart)  {
       if (smart.hasOwnProperty('patient')) {
         var patient = smart.patient;
         var pt = patient.read();
@@ -65,7 +65,91 @@
       } else {
         onError();
       }
-    }
+    }*/
+    function onReady(smart) {
+      if (smart.hasOwnProperty('patient')) {
+        var patient = smart.patient;
+        var pt = patient.read();
+    
+        var obv = smart.patient.api.fetchAll({
+          type: 'Observation',
+          query: {
+            code: {
+              $or: [
+                'http://loinc.org|8302-2', // height
+                'http://loinc.org|8462-4', // diastolic
+                'http://loinc.org|8480-6', // systolic
+                'http://loinc.org|2085-9', // HDL
+                'http://loinc.org|2089-1', // LDL
+                'http://loinc.org|55284-4' // Blood pressure panel
+              ]
+            }
+          }
+        });
+    
+        // Additional FHIR resources
+        var allergies = smart.patient.api.fetchAll({ type: 'AllergyIntolerance' });
+        var conditions = smart.patient.api.fetchAll({ type: 'Condition' });
+        var medications = smart.patient.api.fetchAll({ type: 'MedicationRequest' });
+        var immunizations = smart.patient.api.fetchAll({ type: 'Immunization' });
+    
+        $.when(pt, obv, allergies, conditions, medications, immunizations).fail(onError);
+    
+        $.when(pt, obv, allergies, conditions, medications, immunizations).done(function (
+          patient,
+          obv,
+          allergies,
+          conditions,
+          medications,
+          immunizations
+        ) {
+          var byCodes = smart.byCodes(obv, 'code');
+          var gender = patient.gender;
+          var fname = '';
+          var lname = '';
+    
+          if (typeof patient.name[0] !== 'undefined') {
+            fname = patient.name[0].given.join(' ');
+            lname = patient.name[0].family.join(' ');
+          }
+    
+          var height = byCodes('8302-2');
+          var systolicbp = getBloodPressureValue(byCodes('55284-4'), '8480-6');
+          var diastolicbp = getBloodPressureValue(byCodes('55284-4'), '8462-4');
+          var hdl = byCodes('2085-9');
+          var ldl = byCodes('2089-1');
+    
+          var p = defaultPatient();
+          p.birthdate = patient.birthDate;
+          p.gender = gender;
+          p.fname = fname;
+          p.lname = lname;
+          p.height = getQuantityValueAndUnit(height[0]);
+    
+          if (typeof systolicbp !== 'undefined') {
+            p.systolicbp = systolicbp;
+          }
+    
+          if (typeof diastolicbp !== 'undefined') {
+            p.diastolicbp = diastolicbp;
+          }
+    
+          p.hdl = getQuantityValueAndUnit(hdl[0]);
+          p.ldl = getQuantityValueAndUnit(ldl[0]);
+    
+          // Print additional resources to body
+          $('body').append('<h3>Allergies:</h3><pre>' + JSON.stringify(allergies, null, 2) + '</pre>');
+          $('body').append('<h3>Conditions:</h3><pre>' + JSON.stringify(conditions, null, 2) + '</pre>');
+          $('body').append('<h3>Medications:</h3><pre>' + JSON.stringify(medications, null, 2) + '</pre>');
+          $('body').append('<h3>Immunizations:</h3><pre>' + JSON.stringify(immunizations, null, 2) + '</pre>');
+    
+          ret.resolve(p);
+        });
+      } else {
+        onError();
+      }
+}
+
     
    /* function onReady(smart) {
         if (smart.hasOwnProperty('patient')) {
