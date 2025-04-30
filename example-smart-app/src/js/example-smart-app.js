@@ -66,7 +66,8 @@
         onError();
       }
     }*/
-    function onReady(smart) {
+
+ function onReady(smart) {
   if (smart.hasOwnProperty('patient')) {
     var patient = smart.patient;
     var pt = patient.read();
@@ -87,90 +88,64 @@
       }
     });
 
-    // Safe fetches with error catching
-    var allergies = smart.patient.api.fetchAll({ type: 'AllergyIntolerance' }).catch(e => {
-      console.error("Error fetching allergies:", e);
-      return [];
-    });
+    // jQuery Deferreds
+    var allergies = smart.patient.api.fetchAll({ type: 'AllergyIntolerance' });
+    var conditions = smart.patient.api.fetchAll({ type: 'Condition' });
+    var medications = smart.patient.api.fetchAll({ type: 'MedicationRequest' });
+    var immunizations = smart.patient.api.fetchAll({ type: 'Immunization' });
 
-    var conditions = smart.patient.api.fetchAll({ type: 'Condition' }).catch(e => {
-      console.error("Error fetching conditions:", e);
-      return [];
-    });
+    $.when(pt, obv, allergies, conditions, medications, immunizations)
+      .done(function (patient, obv, allergies, conditions, medications, immunizations) {
+        try {
+          var byCodes = smart.byCodes(obv, 'code');
+          var gender = patient.gender;
+          var fname = '';
+          var lname = '';
 
-    var medications = smart.patient.api.fetchAll({ type: 'MedicationRequest' }).catch(e => {
-      console.error("Error fetching medications:", e);
-      return [];
-    });
+          if (typeof patient.name[0] !== 'undefined') {
+            fname = patient.name[0].given.join(' ');
+            lname = patient.name[0].family.join(' ');
+          }
 
-    var immunizations = smart.patient.api.fetchAll({ type: 'Immunization' }).catch(e => {
-      console.error("Error fetching immunizations:", e);
-      return [];
-    });
+          var height = byCodes('8302-2');
+          var systolicbp = getBloodPressureValue(byCodes('55284-4'), '8480-6');
+          var diastolicbp = getBloodPressureValue(byCodes('55284-4'), '8462-4');
+          var hdl = byCodes('2085-9');
+          var ldl = byCodes('2089-1');
 
-    $.when(pt, obv, allergies, conditions, medications, immunizations).fail(onError);
+          var p = defaultPatient();
+          p.birthdate = patient.birthDate;
+          p.gender = gender;
+          p.fname = fname;
+          p.lname = lname;
+          p.height = getQuantityValueAndUnit(height[0]);
 
-    $.when(pt, obv, allergies, conditions, medications, immunizations).done(function (
-      patient,
-      obv,
-      allergies,
-      conditions,
-      medications,
-      immunizations
-    ) {
-      try {
-        var byCodes = smart.byCodes(obv, 'code');
-        var gender = patient.gender;
+          if (systolicbp) p.systolicbp = systolicbp;
+          if (diastolicbp) p.diastolicbp = diastolicbp;
+          if (hdl[0]) p.hdl = getQuantityValueAndUnit(hdl[0]);
+          if (ldl[0]) p.ldl = getQuantityValueAndUnit(ldl[0]);
 
-        var fname = '';
-        var lname = '';
+          // Log to console (if data is available)
+          if (allergies.length) console.log("Allergies:", allergies);
+          if (conditions.length) console.log("Conditions:", conditions);
+          if (medications.length) console.log("Medications:", medications);
+          if (immunizations.length) console.log("Immunizations:", immunizations);
 
-        if (typeof patient.name[0] !== 'undefined') {
-          fname = patient.name[0].given.join(' ');
-          lname = patient.name[0].family.join(' ');
+          // Print to body
+          $('body').append('<h3>Allergies:</h3><pre>' + JSON.stringify(allergies, null, 2) + '</pre>');
+          $('body').append('<h3>Conditions:</h3><pre>' + JSON.stringify(conditions, null, 2) + '</pre>');
+          $('body').append('<h3>Medications:</h3><pre>' + JSON.stringify(medications, null, 2) + '</pre>');
+          $('body').append('<h3>Immunizations:</h3><pre>' + JSON.stringify(immunizations, null, 2) + '</pre>');
+
+          ret.resolve(p);
+        } catch (e) {
+          console.error("Error processing data:", e);
         }
-
-        var height = byCodes('8302-2');
-        var systolicbp = getBloodPressureValue(byCodes('55284-4'), '8480-6');
-        var diastolicbp = getBloodPressureValue(byCodes('55284-4'), '8462-4');
-        var hdl = byCodes('2085-9');
-        var ldl = byCodes('2089-1');
-
-        var p = defaultPatient();
-        p.birthdate = patient.birthDate;
-        p.gender = gender;
-        p.fname = fname;
-        p.lname = lname;
-        p.height = getQuantityValueAndUnit(height[0]);
-
-        if (typeof systolicbp !== 'undefined') {
-          p.systolicbp = systolicbp;
-        }
-
-        if (typeof diastolicbp !== 'undefined') {
-          p.diastolicbp = diastolicbp;
-        }
-
-        p.hdl = getQuantityValueAndUnit(hdl[0]);
-        p.ldl = getQuantityValueAndUnit(ldl[0]);
-
-        // Log to console (if available)
-        if (allergies.length) console.log("Allergies:", allergies);
-        if (conditions.length) console.log("Conditions:", conditions);
-        if (medications.length) console.log("Medications:", medications);
-        if (immunizations.length) console.log("Immunizations:", immunizations);
-
-        // Print to body (old functionality preserved)
-        $('body').append('<h3>Allergies:</h3><pre>' + JSON.stringify(allergies, null, 2) + '</pre>');
-        $('body').append('<h3>Conditions:</h3><pre>' + JSON.stringify(conditions, null, 2) + '</pre>');
-        $('body').append('<h3>Medications:</h3><pre>' + JSON.stringify(medications, null, 2) + '</pre>');
-        $('body').append('<h3>Immunizations:</h3><pre>' + JSON.stringify(immunizations, null, 2) + '</pre>');
-
-        ret.resolve(p);
-      } catch (e) {
-        console.error("Error in processing patient data:", e);
-      }
-    });
+      })
+      .fail(function () {
+        console.error("One or more fetches failed.");
+        onError();
+      });
   } else {
     onError();
   }
