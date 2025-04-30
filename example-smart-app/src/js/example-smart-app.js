@@ -91,17 +91,16 @@
         var allergies = smart.patient.api.fetchAll({ type: 'AllergyIntolerance' });
         var conditions = smart.patient.api.fetchAll({ type: 'Condition' });
         var medications = smart.patient.api.fetchAll({ type: 'MedicationRequest' });
-        var immunizations = smart.patient.api.fetchAll({ type: 'Immunization' });
+     //   var immunizations = smart.patient.api.fetchAll({ type: 'Immunization' });
     
-        $.when(pt, obv, allergies, conditions, medications, immunizations).fail(onError);
+        $.when(pt, obv, allergies, conditions, medications).fail(onError);
     
-        $.when(pt, obv, allergies, conditions, medications, immunizations).done(function (
+        $.when(pt, obv, allergies, conditions, medications).done(function (
           patient,
           obv,
           allergies,
           conditions,
-          medications,
-          immunizations
+          medications
         ) {
           var byCodes = smart.byCodes(obv, 'code');
           var gender = patient.gender;
@@ -141,7 +140,7 @@
           $('body').append('<h3>Allergies:</h3><pre>' + JSON.stringify(allergies, null, 2) + '</pre>');
           $('body').append('<h3>Conditions:</h3><pre>' + JSON.stringify(conditions, null, 2) + '</pre>');
           $('body').append('<h3>Medications:</h3><pre>' + JSON.stringify(medications, null, 2) + '</pre>');
-          $('body').append('<h3>Immunizations:</h3><pre>' + JSON.stringify(immunizations, null, 2) + '</pre>');
+        //  $('body').append('<h3>Immunizations:</h3><pre>' + JSON.stringify(immunizations, null, 2) + '</pre>');
     
           ret.resolve(p);
         });
