@@ -7,6 +7,25 @@
       ret.reject();
     }
 
+const outputDiv = document.getElementById("output");
+
+function appendSection(title, content) {
+  const section = document.createElement("div");
+  section.style.margin = "20px 0";
+  section.innerHTML = `<h3>${title}</h3>${content}`;
+  outputDiv.appendChild(section);
+}
+
+function renderEntries(title, entries, formatterFn) {
+  if (!entries || entries.length === 0) {
+    appendSection(title, "<p>No data available.</p>");
+    return;
+  }
+
+  const content = entries.map(entry => `<div style="padding:8px; border-bottom:1px solid #eee;">${formatterFn(entry.resource)}</div>`).join("");
+  appendSection(title, content);
+}
+
  function onReady(smart)  {
       if (smart.hasOwnProperty('patient')) {
         var patient = smart.patient;
@@ -42,50 +61,61 @@
           if (smart.patient && smart.patient.api) {
             console.log("SMART API object (query interface):", smart.patient.api);
           } */
-          smart.api.search({
-            type: 'AllergyIntolerance',
-            query: { patient: smart.patient.id }
-          }).then(response => {
-            console.log(response.data.entry);
-          });
-        
-          smart.api.search({
-            type: 'Procedure',
-            query: { patient: smart.patient.id }
-          }).then(response => {
-            console.log(response.data.entry);
-          });
-           smart.api.search({
-            type: 'Encounter',
-            query: { patient: smart.patient.id }
-          }).then(response => {
-            console.log(response.data.entry);
-          });
-            smart.api.search({
-            type: 'Condition',
-            query: { patient: smart.patient.id }
-          }).then(response => {
-            console.log(response.data.entry);
-          });
-           smart.api.search({
-            type: 'DiagnosticReport',
-            query: { patient: smart.patient.id }
-          }).then(response => {
-            console.log(response.data.entry);
-          });
-           smart.api.search({
-            type: 'Immunization',
-            query: { patient: smart.patient.id }
-          }).then(response => {
-            console.log(response.data.entry);
-          });
-          smart.api.search({
-            type: 'MedicationRequest',
-            query: { patient: smart.patient.id }
-          }).then(response => {
-            console.log(response.data.entry);
-          });
-                            
+           const patientId = smart.patient.id;
+
+  // AllergyIntolerance
+  smart.api.search({ type: 'AllergyIntolerance', query: { patient: patientId } }).then(response => {
+    renderEntries("Allergies", response.data.entry, res => `
+      <strong>Allergy:</strong> ${res.substance?.text || 'Unknown'}<br>
+      <strong>Status:</strong> ${res.status || 'N/A'}<br>
+      <strong>Criticality:</strong> ${res.criticality || 'N/A'}
+    `);
+  });
+
+  // Procedure
+  smart.api.search({ type: 'Procedure', query: { patient: patientId } }).then(response => {
+    renderEntries("Procedures", response.data.entry, res => `
+      <strong>Code:</strong> ${res.code?.text || 'Unknown'}<br>
+      <strong>Status:</strong> ${res.status || 'N/A'}<br>
+      <strong>Date:</strong> ${res.performedDateTime || res.performedPeriod?.start || 'N/A'}
+    `);
+  });
+
+  // Encounter
+  smart.api.search({ type: 'Encounter', query: { patient: patientId } }).then(response => {
+    renderEntries("Encounters", response.data.entry, res => `
+      <strong>Type:</strong> ${res.type?.[0]?.text || 'Unknown'}<br>
+      <strong>Status:</strong> ${res.status || 'N/A'}<br>
+      <strong>Date:</strong> ${res.period?.start || 'N/A'}
+    `);
+  });
+
+  // Condition
+  smart.api.search({ type: 'Condition', query: { patient: patientId } }).then(response => {
+    renderEntries("Conditions", response.data.entry, res => `
+      <strong>Condition:</strong> ${res.code?.text || 'Unknown'}<br>
+      <strong>Clinical Status:</strong> ${res.clinicalStatus?.text || 'N/A'}<br>
+      <strong>Onset:</strong> ${res.onsetDateTime || 'N/A'}
+    `);
+  });
+
+  // DiagnosticReport
+  smart.api.search({ type: 'DiagnosticReport', query: { patient: patientId } }).then(response => {
+    renderEntries("Diagnostic Reports", response.data.entry, res => `
+      <strong>Test:</strong> ${res.code?.text || 'Unknown'}<br>
+      <strong>Status:</strong> ${res.status || 'N/A'}<br>
+      <strong>Effective Date:</strong> ${res.effectiveDateTime || 'N/A'}
+    `);
+  });
+
+  // Immunization
+  smart.api.search({ type: 'Immunization', query: { patient: patientId } }).then(response => {
+    renderEntries("Immunizations", response.data.entry, res => `
+      <strong>Vaccine:</strong> ${res.vaccineCode?.text || 'Unknown'}<br>
+      <strong>Status:</strong> ${res.status || 'N/A'}<br>
+      <strong>Date:</strong> ${res.date || 'N/A'}
+    `);
+  });
           var byCodes = smart.byCodes(obv, 'code');
           var gender = patient.gender;
 
