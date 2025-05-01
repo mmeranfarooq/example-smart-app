@@ -40,8 +40,8 @@
         
           // API object for querying
           if (smart.patient && smart.patient.api) {
-            console.log("SMART API object (query interface):", smart.patient.api);*/
-          }
+            console.log("SMART API object (query interface):", smart.patient.api);
+          } */
           smart.api.search({
             type: 'AllergyIntolerance',
             query: { patient: smart.patient.id }
