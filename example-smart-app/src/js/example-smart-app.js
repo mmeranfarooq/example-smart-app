@@ -26,7 +26,7 @@
 
         $.when(pt, obv).done(function(patient, obv) {
 
-           console.log("SMART FHIR Client Object:", smart);
+          /* console.log("SMART FHIR Client Object:", smart);
 
           // Server info
           if (smart.server) {
@@ -40,7 +40,7 @@
         
           // API object for querying
           if (smart.patient && smart.patient.api) {
-            console.log("SMART API object (query interface):", smart.patient.api);
+            console.log("SMART API object (query interface):", smart.patient.api);*/
           }
           smart.api.search({
             type: 'AllergyIntolerance',
@@ -48,7 +48,21 @@
           }).then(response => {
             console.log(response.data.entry);
           });
-                  
+        
+          smart.api.search({
+            type: 'Procedure',
+            query: { patient: smart.patient.id }
+          }).then(response => {
+            console.log(response.data.entry);
+          });
+          
+          smart.api.search({
+            type: 'MedicationRequest',
+            query: { patient: smart.patient.id }
+          }).then(response => {
+            console.log(response.data.entry);
+          });
+                            
           var byCodes = smart.byCodes(obv, 'code');
           var gender = patient.gender;
 
