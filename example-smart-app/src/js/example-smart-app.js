@@ -55,7 +55,30 @@
           }).then(response => {
             console.log(response.data.entry);
           });
-          
+           smart.api.search({
+            type: 'Encounter',
+            query: { patient: smart.patient.id }
+          }).then(response => {
+            console.log(response.data.entry);
+          });
+            smart.api.search({
+            type: 'Condition',
+            query: { patient: smart.patient.id }
+          }).then(response => {
+            console.log(response.data.entry);
+          });
+           smart.api.search({
+            type: 'DiagnosticReport',
+            query: { patient: smart.patient.id }
+          }).then(response => {
+            console.log(response.data.entry);
+          });
+           smart.api.search({
+            type: 'Immunization',
+            query: { patient: smart.patient.id }
+          }).then(response => {
+            console.log(response.data.entry);
+          });
           smart.api.search({
             type: 'MedicationRequest',
             query: { patient: smart.patient.id }
