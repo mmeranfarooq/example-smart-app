@@ -42,15 +42,12 @@
           if (smart.patient && smart.patient.api) {
             console.log("SMART API object (query interface):", smart.patient.api);
           }
-        
-          // Server capability statement (may be a Promise)
-          if (smart.server && smart.server.metadata) {
-            smart.server.metadata.then(function (capabilities) {
-              console.log("FHIR Server Capabilities (metadata):", capabilities);
-            }).catch(function (err) {
-              console.error("Error loading metadata:", err);
-            });
-          }
+          smart.api.search({
+            type: 'AllergyIntolerance',
+            query: { patient: smart.patient.id }
+          }).then(response => {
+            console.log(response.data.entry);
+          });
                   
           var byCodes = smart.byCodes(obv, 'code');
           var gender = patient.gender;
