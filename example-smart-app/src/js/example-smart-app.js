@@ -63,6 +63,23 @@ function renderEntries(title, entries, formatterFn) {
           } */
            const patientId = smart.patient.id;
 
+          smart.api.search({
+            type: 'Appointment',
+            query: {
+              _sort: '-date',
+              _count: 20
+            }
+          }).then(response => {
+            renderEntries("Appointments", response.data.entry, res => `
+              <strong>Status:</strong> ${res.status || 'N/A'}<br>
+              <strong>Start:</strong> ${res.start || 'N/A'}<br>
+              <strong>Reason:</strong> ${res.reason?.text || 'N/A'}<br>
+              <strong>Participants:</strong> ${res.participant?.map(p => p.actor?.display || p.actor?.reference).join(', ') || 'N/A'}
+            `);
+          }).catch(error => {
+            console.error("Error fetching appointments:", error);
+          });
+
   // AllergyIntolerance
   smart.api.search({ type: 'AllergyIntolerance', query: { patient: patientId } }).then(response => {
     renderEntries("Allergies", response.data.entry, res => `
