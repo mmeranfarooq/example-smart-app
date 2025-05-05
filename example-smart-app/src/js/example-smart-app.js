@@ -63,7 +63,7 @@ function renderEntries(title, entries, formatterFn) {
           } */
            const patientId = smart.patient.id;
 
-          smart.api.search({
+     /*     smart.api.search({
             type: 'Appointment',
             query: {
               _sort: '-date',
@@ -76,7 +76,7 @@ function renderEntries(title, entries, formatterFn) {
               <strong>Reason:</strong> ${res.reason?.text || 'N/A'}<br>
               <strong>Participants:</strong> ${res.participant?.map(p => p.actor?.display || p.actor?.reference).join(', ') || 'N/A'}
             `);
-          });
+          });*/
 
   // AllergyIntolerance
   smart.api.search({ type: 'AllergyIntolerance', query: { patient: patientId } }).then(response => {
