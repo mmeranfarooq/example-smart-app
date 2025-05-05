@@ -76,8 +76,6 @@ function renderEntries(title, entries, formatterFn) {
               <strong>Reason:</strong> ${res.reason?.text || 'N/A'}<br>
               <strong>Participants:</strong> ${res.participant?.map(p => p.actor?.display || p.actor?.reference).join(', ') || 'N/A'}
             `);
-          }).catch(error => {
-            console.error("Error fetching appointments:", error);
           });
 
   // AllergyIntolerance
